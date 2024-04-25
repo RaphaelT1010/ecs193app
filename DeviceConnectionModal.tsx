@@ -21,7 +21,7 @@ type DeviceModalProps = {
   visible: boolean;
   connectToPeripheral: (device: Device) => void;
   closeModal: () => void;
-  children: React.ReactNode; // Add children prop here
+  children: React.ReactNode;
 };
 
 const DeviceModalListItem: FC<DeviceModalListItemProps> = (props) => {
@@ -58,6 +58,22 @@ const DeviceModal: FC<DeviceModalProps> = (props) => {
     [closeModal, connectToPeripheral]
   );
 
+  const renderNoDevice = () => {
+    return (
+      <SafeAreaView style={modalStyle.modalTitle}>
+        <Text style={modalStyle.modalTitleText}>
+          No devices found in the Bluetooth range
+        </Text>
+        <TouchableOpacity
+          onPress={closeModal}
+          style={modalStyle.backButton}
+        >
+          <Text style={modalStyle.backButtonText}>Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  };
+
   return (
     <Modal
       style={modalStyle.modalContainer}
@@ -65,16 +81,26 @@ const DeviceModal: FC<DeviceModalProps> = (props) => {
       transparent={false}
       visible={visible}
     >
-      <SafeAreaView style={modalStyle.modalTitle}>
-        <Text style={modalStyle.modalTitleText}>
-          Tap on a device to connect
-        </Text>
-        <FlatList
-          contentContainerStyle={modalStyle.modalFlatlistContiner}
-          data={devices}
-          renderItem={renderDeviceModalListItem}
-        />
-      </SafeAreaView>
+      {devices.length ? (
+        <SafeAreaView style={modalStyle.modalTitle}>
+          <TouchableOpacity
+            onPress={closeModal}
+            style={modalStyle.backButton}
+          >
+            <Text style={modalStyle.backButtonText}>Back</Text>
+          </TouchableOpacity>
+          <Text style={modalStyle.modalTitleText}>
+            Tap on a device to connect
+          </Text>
+          <FlatList
+            contentContainerStyle={modalStyle.modalFlatlistContiner}
+            data={devices}
+            renderItem={renderDeviceModalListItem}
+          />
+        </SafeAreaView>
+      ) : (
+        renderNoDevice()
+      )}
     </Modal>
   );
 };
@@ -101,14 +127,24 @@ const modalStyle = StyleSheet.create({
     backgroundColor: "#f2f2f2",
   },
   modalTitleText: {
-    marginTop: 40,
+    marginTop: 60,
     fontSize: 30,
     fontWeight: "bold",
     marginHorizontal: 20,
     textAlign: "center",
   },
+  backButton: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+    zIndex: 1,
+  },
+  backButtonText: {
+    fontSize: 18,
+    color: "#007BFF",
+  },
   ctaButton: {
-    backgroundColor: "#FF6060",
+    backgroundColor: "#3065ba",
     justifyContent: "center",
     alignItems: "center",
     height: 50,
@@ -117,7 +153,7 @@ const modalStyle = StyleSheet.create({
     borderRadius: 8,
   },
   ctaButtonText: {
-    fontSize: 18,
+    fontSize: 9,
     fontWeight: "bold",
     color: "white",
   },

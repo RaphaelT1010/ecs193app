@@ -7,8 +7,11 @@ import {
   View,
 } from "react-native";
 import DeviceModal from "./DeviceConnectionModal";
-import { PulseIndicator } from "./PulseIndicator";
 import useBLE from "./useBLE";
+
+import { NativeModules } from 'react-native';
+
+
 
 const App = () => {
   const {
@@ -40,43 +43,41 @@ const App = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.heartRateTitleWrapper}>
-          <Text style={styles.heartRateTitleText}>
-            Please connect to the Robot
-          </Text>
+      <View style={styles.TitleWrapper}>
+        <Text style={styles.TitleText}>
+          Please connect to the Robot
+        </Text>
       </View>
       <View style={styles.arrowsContainer}>
-          <View style={styles.row}>
-            <TouchableOpacity
-              onPress={() => handleArrowPress("up")}
-              style={styles.arrowButton}
-            >
-              <Text style={styles.arrowText}>↑</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.row}>
-            <TouchableOpacity
-              onPress={() => handleArrowPress("left")}
-              style={[styles.arrowButton]}
-            >
-              <Text style={styles.arrowText}>←</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleArrowPress("right")}
-              style={[styles.arrowButton]}
-            >
-              <Text style={styles.arrowText}>→</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.row}>
-            <TouchableOpacity
-              onPress={() => handleArrowPress("down")}
-              style={styles.arrowButton}
-            >
-              <Text style={styles.arrowText}>↓</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.row}>
+          <TouchableOpacity
+            onPress={() => handleArrowPress("up")}
+            style={styles.arrowButton}
+          >
+            <Text style={styles.arrowText}>↑</Text>
+          </TouchableOpacity>
         </View>
+        <View style={styles.row}>
+          <TouchableOpacity
+            onPress={() => handleArrowPress("left")}
+            style={styles.arrowButton}
+          >
+            <Text style={styles.arrowText}>←</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleArrowPress("down")}
+            style={styles.arrowButton}
+          >
+            <Text style={styles.arrowText}>↓</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleArrowPress("right")}
+            style={styles.arrowButton}
+          >
+            <Text style={styles.arrowText}>→</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       <TouchableOpacity
         onPress={connectedDevice ? disconnectFromDevice : openModal}
         style={styles.ctaButton}
@@ -104,21 +105,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f2f2f2",
   },
-  heartRateTitleWrapper: {
+  TitleWrapper: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  heartRateTitleText: {
+  TitleText: {
     fontSize: 30,
     fontWeight: "bold",
     textAlign: "center",
     marginHorizontal: 20,
     color: "black",
-  },
-  heartRateText: {
-    fontSize: 25,
-    marginTop: 15,
   },
   arrowsContainer: {
     flex: 1,
@@ -138,6 +135,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 20,
     margin: 10,
+    width: 75,
+    height: 75,
   },
   arrowText: {
     color: 'white',
@@ -145,12 +144,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   ctaButton: {
-    backgroundColor: "#FF6060",
+    backgroundColor: "#3065ba",
     justifyContent: "center",
     alignItems: "center",
-    height: 50,
+    height: 60,
     marginHorizontal: 20,
-    marginBottom: 5,
+    marginBottom: 20,
     borderRadius: 8,
   },
   ctaButtonText: {
