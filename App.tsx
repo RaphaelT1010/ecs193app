@@ -9,7 +9,7 @@ import {
 import DeviceModal from "./DeviceConnectionModal";
 import useBLE from "./useBLE";
 
-import { NativeModules } from 'react-native';
+import { NativeModules, TextInput, Button} from 'react-native';
 
 
 
@@ -24,6 +24,14 @@ const App = () => {
     handleArrowPress,
   } = useBLE();
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+
+  const [xAxis, setInput1] = useState("");
+  const [yAxis, setInput2] = useState("");
+
+  const GPS_Input = () => {
+    console.log('X-Axis is: ', xAxis);
+    console.log('Y-Axis is: ', yAxis);
+  };
 
   const scanForDevices = async () => {
     const isPermissionsEnabled = await requestPermissions();
@@ -44,9 +52,32 @@ const App = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.TitleWrapper}>
-        <Text style={styles.TitleText}>
-          Please connect to the Robot
+        {connectedDevice ? (
+          <>
+            <Text style={styles.TitleText}>
+            Please Select GPS or Manual Input
+          </Text>
+          </>
+        ) : (
+          <Text style={styles.TitleText}>
+          Please Connect to the Robot
         </Text>
+        )}
+      </View>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          onChangeText={setInput1}
+          value={xAxis}
+          placeholder="X-Axis"
+        />
+        <TextInput
+          style={styles.input}
+          onChangeText={setInput2}
+          value={yAxis}
+          placeholder="Y-Axis"
+        />
+        <Button title="Submit" onPress={GPS_Input} />
       </View>
       <View style={styles.arrowsContainer}>
         <View style={styles.row}>
@@ -116,6 +147,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginHorizontal: 20,
     color: "black",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 20,
+    marginTop: 20,
+  },
+  input: {
+    flex: 1,
+    height: 40,
+    borderColor: "gray",
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    marginRight: 10,
   },
   arrowsContainer: {
     flex: 1,
