@@ -153,6 +153,10 @@ function useBLE(): BluetoothLowEnergyApi {
         console.log(direction);
         sendControlCommand("d");
         break;
+      case "stop":
+        console.log(direction);
+        sendControlCommand("s");
+        break;
       default:
         break;
     }
