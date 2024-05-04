@@ -7,11 +7,8 @@ import {
   View,
 } from "react-native";
 import DeviceModal from "./DeviceConnectionModal";
+import { PulseIndicator } from "./PulseIndicator";
 import useBLE from "./useBLE";
-
-import { NativeModules, TextInput, Button} from 'react-native';
-
-
 
 const App = () => {
   const {
@@ -24,14 +21,6 @@ const App = () => {
     handleArrowPress,
   } = useBLE();
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-
-  const [xAxis, setInput1] = useState("");
-  const [yAxis, setInput2] = useState("");
-
-  const GPS_Input = () => {
-    console.log('X-Axis is: ', xAxis);
-    console.log('Y-Axis is: ', yAxis);
-  };
 
   const scanForDevices = async () => {
     const isPermissionsEnabled = await requestPermissions();
@@ -51,64 +40,45 @@ const App = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.TitleWrapper}>
-        {connectedDevice ? (
-          <>
-            <Text style={styles.TitleText}>
-            Please Select GPS or Manual Input
+      <View style={styles.heartRateTitleWrapper}>
+          <Text style={styles.heartRateTitleText}>
+            Please connect to the Robot
           </Text>
-          </>
-        ) : (
-          <Text style={styles.TitleText}>
-          Please Connect to the Robot
-        </Text>
-        )}
-      </View>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          onChangeText={setInput1}
-          value={xAxis}
-          placeholder="X-Axis"
-        />
-        <TextInput
-          style={styles.input}
-          onChangeText={setInput2}
-          value={yAxis}
-          placeholder="Y-Axis"
-        />
-        <Button title="Submit" onPress={GPS_Input} />
       </View>
       <View style={styles.arrowsContainer}>
-        <View style={styles.row}>
-          <TouchableOpacity
-            onPress={() => handleArrowPress("up")}
-            style={styles.arrowButton}
-          >
-            <Text style={styles.arrowText}>↑</Text>
-          </TouchableOpacity>
+          <View style={styles.row}>
+            <TouchableOpacity
+              onPressIn={() => handleArrowPress("up")}
+              onPressOut={() => handleArrowPress("stop")}
+              style={styles.arrowButton}
+            >
+              <Text style={styles.arrowText}>↑</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.row}>
+            <TouchableOpacity
+              onPressIn={() => handleArrowPress("left")}
+              onPressOut={() => handleArrowPress("stop")}
+              style={[styles.arrowButton]}
+            >
+              <Text style={styles.arrowText}>←</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPressIn={() => handleArrowPress("down")}
+              onPressOut={() => handleArrowPress("stop")}
+              style={styles.arrowButton}
+            >
+              <Text style={styles.arrowText}>↓</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPressIn={() => handleArrowPress("right")}
+              onPressOut={() => handleArrowPress("stop")}
+              style={[styles.arrowButton]}
+            >
+              <Text style={styles.arrowText}>→</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={styles.row}>
-          <TouchableOpacity
-            onPress={() => handleArrowPress("left")}
-            style={styles.arrowButton}
-          >
-            <Text style={styles.arrowText}>←</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleArrowPress("down")}
-            style={styles.arrowButton}
-          >
-            <Text style={styles.arrowText}>↓</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleArrowPress("right")}
-            style={styles.arrowButton}
-          >
-            <Text style={styles.arrowText}>→</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
       <TouchableOpacity
         onPress={connectedDevice ? disconnectFromDevice : openModal}
         style={styles.ctaButton}
@@ -136,33 +106,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f2f2f2",
   },
-  TitleWrapper: {
+  heartRateTitleWrapper: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  TitleText: {
+  heartRateTitleText: {
     fontSize: 30,
     fontWeight: "bold",
     textAlign: "center",
     marginHorizontal: 20,
     color: "black",
   },
-  inputContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 20,
-    marginTop: 20,
-  },
-  input: {
-    flex: 1,
-    height: 40,
-    borderColor: "gray",
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginRight: 10,
+  heartRateText: {
+    fontSize: 25,
+    marginTop: 15,
   },
   arrowsContainer: {
     flex: 1,
@@ -182,8 +140,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 20,
     margin: 10,
-    width: 75,
-    height: 75,
+    width: 100, // Set the width to the desired size
+    height: 100, // Set the height to the desired size
   },
   arrowText: {
     color: 'white',
@@ -191,10 +149,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   ctaButton: {
-    backgroundColor: "#3065ba",
+    backgroundColor: "#4287f5",
     justifyContent: "center",
     alignItems: "center",
-    height: 60,
+    height: 50,
     marginHorizontal: 20,
     marginBottom: 20,
     borderRadius: 8,
