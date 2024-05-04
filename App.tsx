@@ -1,175 +1,173 @@
-import { useMemo, useState } from "react";
-import { PermissionsAndroid, Platform } from "react-native";
-import { BleManager, Device } from "react-native-ble-plx";
-import * as ExpoDevice from "expo-device";
-import base64 from "react-native-base64";
+import React, { useState } from "react";
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import DeviceModal from "./DeviceConnectionModal";
+import { PulseIndicator } from "./PulseIndicator";
+import useBLE from "./useBLE";
 
-const CONTROL_SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
-const CONTROL_CHARACTERISTIC_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
-
-interface BluetoothLowEnergyApi {
-  requestPermissions(): Promise<boolean>;
-  scanForPeripherals(): void;
-  connectToDevice: (device: Device) => Promise<void>;
-  disconnectFromDevice: () => void;
-  connectedDevice: Device | null;
-  allDevices: Device[];
-  handleArrowPress: (direction: string) => void;
-}
-
-function useBLE(): BluetoothLowEnergyApi {
-  const bleManager = useMemo(() => new BleManager(), []);
-  const [allDevices, setAllDevices] = useState<Device[]>([]);
-  const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
-
-  const requestAndroid31Permissions = async () => {
-    const bluetoothScanPermission = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-      {
-        title: "Location Permission",
-        message: "Bluetooth Low Energy requires Location",
-        buttonPositive: "OK",
-      }
-    );
-    const bluetoothConnectPermission = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-      {
-        title: "Location Permission",
-        message: "Bluetooth Low Energy requires Location",
-        buttonPositive: "OK",
-      }
-    );
-    const fineLocationPermission = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      {
-        title: "Location Permission",
-        message: "Bluetooth Low Energy requires Location",
-        buttonPositive: "OK",
-      }
-    );
-
-    return (
-      bluetoothScanPermission === "granted" &&
-      bluetoothConnectPermission === "granted" &&
-      fineLocationPermission === "granted"
-    );
-  };
-
-  const requestPermissions = async () => {
-    if (Platform.OS === "android") {
-      if ((ExpoDevice.platformApiLevel ?? -1) < 31) {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: "Location Permission",
-            message: "Bluetooth Low Energy requires Location",
-            buttonPositive: "OK",
-          }
-        );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } else {
-        const isAndroid31PermissionsGranted =
-          await requestAndroid31Permissions();
-
-        return isAndroid31PermissionsGranted;
-      }
-    } else {
-      return true;
-    }
-  };
-
-  const isDuplicateDevice = (devices: Device[], nextDevice: Device) =>
-    devices.findIndex((device) => nextDevice.id === device.id) > -1;
-
-  const scanForPeripherals = () =>
-    bleManager.startDeviceScan(null, null, (error, device) => {
-      if (error) {
-        console.log(error);
-      }
-      if (device && device.name) {
-        setAllDevices((prevState: Device[]) => {
-          if (!isDuplicateDevice(prevState, device)) {
-            return [...prevState, device];
-          }
-          return prevState;
-        });
-      }
-    });
-
-  const connectToDevice = async (device: Device) => {
-    try {
-      await bleManager.connectToDevice(device.id);
-      setConnectedDevice(device);
-      await device.discoverAllServicesAndCharacteristics();
-      bleManager.stopDeviceScan();
-    } catch (e) {
-      console.log("FAILED TO CONNECT", e);
-    }
-  };
-
-  const disconnectFromDevice = () => {
-    if (connectedDevice) {
-      bleManager.cancelDeviceConnection(connectedDevice.id);
-      setConnectedDevice(null);
-    }
-  };
-
-  const sendControlCommand = async (command: string) => {
-    if (!connectedDevice) {
-      console.log("No device connected");
-      return;
-    }
-
-    try {
-      const characteristics = await connectedDevice.characteristicsForService(
-        CONTROL_SERVICE_UUID
-      );
-      const controlCharacteristic = characteristics.find(
-        (c) => c.uuid === CONTROL_CHARACTERISTIC_UUID
-      );
-      if (controlCharacteristic) {
-        await controlCharacteristic.writeWithResponse(base64.encode(command));
-      }
-    } catch (error) {
-      console.log("Error sending control command", error);
-    }
-  };
-
-  const handleArrowPress = (direction: string) => {
-    switch (direction) {
-      case "left":
-        console.log(direction);
-        sendControlCommand("l");
-        break;
-      case "up":
-        console.log(direction);
-        sendControlCommand("u");
-        break;
-      case "right":
-        console.log(direction);
-        sendControlCommand("r");
-        break;
-      case "down":
-        console.log(direction);
-        sendControlCommand("d");
-        break;
-      case "stop":
-        console.log(direction);
-        break;
-      default:
-        break;
-    }
-  };
-
-  return {
-    scanForPeripherals,
+const App = () => {
+  const {
     requestPermissions,
-    connectToDevice,
+    scanForPeripherals,
     allDevices,
+    connectToDevice,
     connectedDevice,
     disconnectFromDevice,
     handleArrowPress,
-  };
-}
+  } = useBLE();
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
-export default useBLE;
+  const scanForDevices = async () => {
+    const isPermissionsEnabled = await requestPermissions();
+    if (isPermissionsEnabled) {
+      scanForPeripherals();
+    }
+  };
+
+  const hideModal = () => {
+    setIsModalVisible(false);
+  };
+
+  const openModal = async () => {
+    scanForDevices();
+    setIsModalVisible(true);
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.heartRateTitleWrapper}>
+          <Text style={styles.heartRateTitleText}>
+            Please connect to the Robot
+          </Text>
+      </View>
+      <View style={styles.arrowsContainer}>
+          <View style={styles.row}>
+            <TouchableOpacity
+              onPressIn={() => handleArrowPress("up")}
+              onPressOut={() => handleArrowPress("stop")}
+              style={styles.arrowButton}
+            >
+              <Text style={styles.arrowText}>↑</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.row}>
+            <TouchableOpacity
+              onPressIn={() => handleArrowPress("left")}
+              onPressOut={() => handleArrowPress("stop")}
+              style={[styles.arrowButton]}
+            >
+              <Text style={styles.arrowText}>←</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPressIn={() => handleArrowPress("down")}
+              onPressOut={() => handleArrowPress("stop")}
+              style={styles.arrowButton}
+            >
+              <Text style={styles.arrowText}>↓</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPressIn={() => handleArrowPress("right")}
+              onPressOut={() => handleArrowPress("stop")}
+              style={[styles.arrowButton]}
+            >
+              <Text style={styles.arrowText}>→</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      <TouchableOpacity
+        onPress={connectedDevice ? disconnectFromDevice : openModal}
+        style={styles.ctaButton}
+      >
+        <Text style={styles.ctaButtonText}>
+          {connectedDevice ? "Disconnect" : "Connect"}
+        </Text>
+      </TouchableOpacity>
+      <DeviceModal
+        closeModal={hideModal}
+        visible={isModalVisible}
+        connectToPeripheral={connectToDevice}
+        devices={allDevices}
+      >
+        <TouchableOpacity onPress={hideModal}>
+          <Text style={styles.backButton}>Back</Text>
+        </TouchableOpacity>
+      </DeviceModal>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f2f2f2",
+  },
+  heartRateTitleWrapper: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  heartRateTitleText: {
+    fontSize: 30,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginHorizontal: 20,
+    color: "black",
+  },
+  heartRateText: {
+    fontSize: 25,
+    marginTop: 15,
+  },
+  arrowsContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  arrowButton: {
+    backgroundColor: 'gray',
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    margin: 10,
+    width: 100, // Set the width to the desired size
+    height: 100, // Set the height to the desired size
+  },
+  arrowText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  ctaButton: {
+    backgroundColor: "#4287f5",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 50,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 8,
+  },
+  ctaButtonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "white",
+  },
+  backButton: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "blue",
+    marginTop: 10,
+  },
+});
+
+export default App;
