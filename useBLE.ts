@@ -169,13 +169,13 @@ function useBLE(): BluetoothLowEnergyApi {
   const handleTimeoutAck = () => {
     console.log("Acknwoledgement signal sent");
     //& is 38 in ascii being sent to the Pi
-    sendControlCommand("&");
+    sendControlCommand("@");
   };
 
   const sendEnableSignal = () => {
     console.log("Turning on the Robot");
     //& is 38 in ascii being sent to the Pi
-    sendControlCommand("@");
+    sendControlCommand("&");
   };
 
   const sendDisableSignal = () => {
