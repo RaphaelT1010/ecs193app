@@ -15,6 +15,9 @@ interface BluetoothLowEnergyApi {
   connectedDevice: Device | null;
   allDevices: Device[];
   handleArrowPress: (direction: string) => void;
+  handleTimeoutAck: () => void;
+  sendEnableSignal: () => void;
+  sendDisableSignal: () => void;
 }
 
 function useBLE(): BluetoothLowEnergyApi {
@@ -86,7 +89,7 @@ function useBLE(): BluetoothLowEnergyApi {
       if (error) {
         console.log(error);
       }
-      if (device && device.name?.includes('Nest')) {
+      if (device && device.name) {
         setAllDevices((prevState: Device[]) => {
           if (!isDuplicateDevice(prevState, device)) {
             return [...prevState, device];
@@ -102,6 +105,7 @@ function useBLE(): BluetoothLowEnergyApi {
       setConnectedDevice(device);
       await device.discoverAllServicesAndCharacteristics();
       bleManager.stopDeviceScan();
+      sendEnableSignal();
     } catch (e) {
       console.log("FAILED TO CONNECT", e);
     }
@@ -111,6 +115,7 @@ function useBLE(): BluetoothLowEnergyApi {
     if (connectedDevice) {
       bleManager.cancelDeviceConnection(connectedDevice.id);
       setConnectedDevice(null);
+      sendDisableSignal();
     }
   };
 
@@ -155,11 +160,28 @@ function useBLE(): BluetoothLowEnergyApi {
         break;
       case "stop":
         console.log(direction);
-        sendControlCommand("s");
         break;
       default:
         break;
     }
+  };
+
+  const handleTimeoutAck = () => {
+    console.log("Acknwoledgement signal sent");
+    //& is 38 in ascii being sent to the Pi
+    sendControlCommand("&");
+  };
+
+  const sendEnableSignal = () => {
+    console.log("Turning on the Robot");
+    //& is 38 in ascii being sent to the Pi
+    sendControlCommand("@");
+  };
+
+  const sendDisableSignal = () => {
+    console.log("Turning off the Robot");
+    //& is 38 in ascii being sent to the Pi
+    sendControlCommand("#");
   };
 
   return {
@@ -170,6 +192,9 @@ function useBLE(): BluetoothLowEnergyApi {
     connectedDevice,
     disconnectFromDevice,
     handleArrowPress,
+    handleTimeoutAck,
+    sendEnableSignal,
+    sendDisableSignal
   };
 }
 
