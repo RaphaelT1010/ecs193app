@@ -1,17 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  TextInput,
 } from "react-native";
-import DeviceModal from "./DeviceConnectionModal";
+import DeviceConnectionModal from "./DeviceConnectionModal";
+import EnableRobotModal from "./EnableRobotModal";
 import useBLE from "./useBLE";
-
-import { NativeModules, TextInput, Button} from 'react-native';
-
-
 
 const App = () => {
   const {
@@ -22,15 +20,23 @@ const App = () => {
     connectedDevice,
     disconnectFromDevice,
     handleArrowPress,
+    handleTimeoutAck,
+    sendEnableSignal,
+    sendDisableSignal,
   } = useBLE();
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-
-  const [xAxis, setInput1] = useState("");
-  const [yAxis, setInput2] = useState("");
+  const [isDeviceModalVisible, setIsDeviceModalVisible] = useState<boolean>(
+    false
+  );
+  const [isEnableRobotModalVisible, setIsEnableRobotModalVisible] = useState<boolean>(
+    false
+  );
+  const [robotToggle, setRobotToggle] = useState<boolean>(false);
+  const [xAxis, setXAxis] = useState("");
+  const [yAxis, setYAxis] = useState("");
 
   const GPS_Input = () => {
-    console.log('X-Axis is: ', xAxis);
-    console.log('Y-Axis is: ', yAxis);
+    console.log("X-Axis is: ", xAxis);
+    console.log("Y-Axis is: ", yAxis);
   };
 
   const scanForDevices = async () => {
@@ -40,14 +46,40 @@ const App = () => {
     }
   };
 
-  const hideModal = () => {
-    setIsModalVisible(false);
+  const hideDeviceModal = () => {
+    setIsDeviceModalVisible(false);
   };
 
-  const openModal = async () => {
-    scanForDevices();
-    setIsModalVisible(true);
+  const hideEnableRobotModal = () => {
+    setIsEnableRobotModalVisible(false);
   };
+
+  const openDeviceModal = async () => {
+    scanForDevices();
+    setIsDeviceModalVisible(true);
+  };
+
+  const openEnableRobotModal = () => {
+    setIsEnableRobotModalVisible(true);
+  };
+
+  const toggleRobot = () => {
+    setRobotToggle((prev) => !prev);
+    if(robotToggle) {
+      sendDisableSignal();
+    }
+    else {
+      sendEnableSignal();
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleTimeoutAck();
+    }, 5000); // Every 5 seconds
+
+    return () => clearInterval(interval); // Cleanup
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -55,30 +87,30 @@ const App = () => {
         {connectedDevice ? (
           <>
             <Text style={styles.TitleText}>
-            Please Select GPS or Manual Input
-          </Text>
+              Please Select GPS or Manual Input
+            </Text>
           </>
         ) : (
-          <Text style={styles.TitleText}>
-          Please Connect to the Robot
-        </Text>
+          <Text style={styles.TitleText}>Please Connect to the Robot</Text>
         )}
       </View>
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          onChangeText={setInput1}
+          onChangeText={setXAxis}
           value={xAxis}
           placeholder="X-Axis"
         />
         <TextInput
           style={styles.input}
-          onChangeText={setInput2}
+          onChangeText={setYAxis}
           value={yAxis}
           placeholder="Y-Axis"
         />
-        <Button title="Submit" onPress={GPS_Input} />
       </View>
+      <TouchableOpacity onPress={GPS_Input} style={styles.gpsButton}>
+        <Text style={styles.gpsButtonText}>Submit</Text>
+      </TouchableOpacity>
       <View style={styles.arrowsContainer}>
         <View style={styles.row}>
           <TouchableOpacity
@@ -114,23 +146,39 @@ const App = () => {
         </View>
       </View>
       <TouchableOpacity
-        onPress={connectedDevice ? disconnectFromDevice : openModal}
+        onPress={connectedDevice ? disconnectFromDevice : openDeviceModal}
         style={styles.ctaButton}
       >
         <Text style={styles.ctaButtonText}>
           {connectedDevice ? "Disconnect" : "Connect"}
         </Text>
       </TouchableOpacity>
-      <DeviceModal
-        closeModal={hideModal}
-        visible={isModalVisible}
+      <TouchableOpacity onPress={openEnableRobotModal} style={styles.enableRobotButton}>
+        {robotToggle ? (
+          <>
+          <TouchableOpacity onPress={toggleRobot} style={styles.disableRobotButton}>
+          <Text style={styles.ctaButtonText}>Disable Robot</Text>
+          </TouchableOpacity></>
+        ) : (
+          <Text style={styles.ctaButtonText}>Enable Robot</Text>
+        )}
+        
+      </TouchableOpacity>
+      <DeviceConnectionModal
+        closeModal={hideDeviceModal}
+        visible={isDeviceModalVisible}
         connectToPeripheral={connectToDevice}
         devices={allDevices}
       >
-        <TouchableOpacity onPress={hideModal}>
+        <TouchableOpacity onPress={hideDeviceModal}>
           <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>
-      </DeviceModal>
+      </DeviceConnectionModal>
+      <EnableRobotModal
+        closeModal={hideEnableRobotModal}
+        visible={isEnableRobotModalVisible}
+        toggleOn={toggleRobot}
+      />
     </SafeAreaView>
   );
 };
@@ -155,9 +203,10 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginHorizontal: 20,
-    marginTop: 20,
+    marginTop: 10,
+    width: 275, // set a specific width
   },
   input: {
     flex: 1,
@@ -167,6 +216,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 5,
     marginRight: 10,
+    width: 30, // set a specific width
   },
   arrowsContainer: {
     flex: 1,
@@ -179,20 +229,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   arrowButton: {
-    backgroundColor: 'gray',
+    backgroundColor: "gray",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderRadius: 20,
     margin: 10,
     width: 75,
     height: 75,
   },
   arrowText: {
-    color: 'white',
+    color: "white",
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
+  },
+  gpsButton: {
+    backgroundColor: "#3065ba",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 40,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    borderRadius: 8,
+    width: 100, // Set width to a specific value
+  },
+  gpsButtonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "white",
   },
   ctaButton: {
     backgroundColor: "#3065ba",
@@ -200,10 +265,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: 60,
     marginHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 10,
     borderRadius: 8,
+    width: 150, // Set width to a specific value
   },
   ctaButtonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "white",
+  },
+  enableRobotButton: {
+    backgroundColor: "#3065ba",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 60,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    borderRadius: 8,
+    width: 150, // Set width to a specific value
+  },
+  disableRobotButton: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#3065ba",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  disableButtonText: {
     fontSize: 18,
     fontWeight: "bold",
     color: "white",
