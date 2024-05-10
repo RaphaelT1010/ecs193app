@@ -21,7 +21,7 @@ type DeviceModalProps = {
   visible: boolean;
   connectToPeripheral: (device: Device) => void;
   closeModal: () => void;
-  children: React.ReactNode;
+  children: React.ReactNode; // Add children prop here
 };
 
 const DeviceModalListItem: FC<DeviceModalListItemProps> = (props) => {
@@ -127,7 +127,7 @@ const modalStyle = StyleSheet.create({
     backgroundColor: "#f2f2f2",
   },
   modalTitleText: {
-    marginTop: 60,
+    marginTop: 40,
     fontSize: 30,
     fontWeight: "bold",
     marginHorizontal: 20,
@@ -144,7 +144,7 @@ const modalStyle = StyleSheet.create({
     color: "#007BFF",
   },
   ctaButton: {
-    backgroundColor: "#3065ba",
+    backgroundColor: "#FF6060",
     justifyContent: "center",
     alignItems: "center",
     height: 50,
@@ -153,7 +153,7 @@ const modalStyle = StyleSheet.create({
     borderRadius: 8,
   },
   ctaButtonText: {
-    fontSize: 9,
+    fontSize: 18,
     fontWeight: "bold",
     color: "white",
   },
