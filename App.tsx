@@ -20,9 +20,10 @@ const App = () => {
     connectedDevice,
     disconnectFromDevice,
     handleArrowPress,
-    handleTimeoutAck,
+    //handleTimeoutAck,
     sendEnableSignal,
     sendDisableSignal,
+    handleXYInput,
   } = useBLE();
   const [isDeviceModalVisible, setIsDeviceModalVisible] = useState<boolean>(
     false
@@ -37,6 +38,8 @@ const App = () => {
   const GPS_Input = () => {
     console.log("X-Axis is: ", xAxis);
     console.log("Y-Axis is: ", yAxis);
+
+    handleXYInput(xAxis, yAxis);
   };
 
   const scanForDevices = async () => {
@@ -73,13 +76,13 @@ const App = () => {
     }
   };
 
-  useEffect(() => {
+  /*useEffect(() => {
     const interval = setInterval(() => {
       handleTimeoutAck();
     }, 5000); // Every 5 seconds
 
     return () => clearInterval(interval); // Cleanup
-  }, []);
+  }, []);*/
 
   return (
     <SafeAreaView style={styles.container}>
