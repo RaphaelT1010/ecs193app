@@ -6,6 +6,8 @@ import base64 from "react-native-base64";
 
 const CONTROL_SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
 const CONTROL_CHARACTERISTIC_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
+const GPS_SERVICE_UUID = "0392fac1-9fd3-1023-a4e2-39109fa39aa2";
+const GPS_CHARACTERISTIC_UUID = "0102aaaa-3333-1111-abcd-0123456831fd";
 
 interface BluetoothLowEnergyApi {
   requestPermissions(): Promise<boolean>;
@@ -15,9 +17,10 @@ interface BluetoothLowEnergyApi {
   connectedDevice: Device | null;
   allDevices: Device[];
   handleArrowPress: (direction: string) => void;
-  handleTimeoutAck: () => void;
+  //handleTimeoutAck: () => void;
   sendEnableSignal: () => void;
   sendDisableSignal: () => void;
+  handleXYInput: (x: string, y: string) => void;
 }
 
 function useBLE(): BluetoothLowEnergyApi {
@@ -89,7 +92,7 @@ function useBLE(): BluetoothLowEnergyApi {
       if (error) {
         console.log(error);
       }
-      if (device && device.name) {
+      if (device && device.name == 'tractorsquad') {
         setAllDevices((prevState: Device[]) => {
           if (!isDuplicateDevice(prevState, device)) {
             return [...prevState, device];
@@ -133,12 +136,58 @@ function useBLE(): BluetoothLowEnergyApi {
         (c) => c.uuid === CONTROL_CHARACTERISTIC_UUID
       );
       if (controlCharacteristic) {
+        //await controlCharacteristic.writeWithoutResponse(base64.encode(command));
         await controlCharacteristic.writeWithResponse(base64.encode(command));
       }
     } catch (error) {
       console.log("Error sending control command", error);
     }
   };
+
+  const sendGPSCommand = async (gps: string) => {
+    if (!connectedDevice) {
+      console.log("No device connected");
+      return;
+    }
+
+    try {
+      const characteristics = await connectedDevice.characteristicsForService(
+        GPS_SERVICE_UUID
+      );
+      const controlCharacteristic = characteristics.find(
+        (c) => c.uuid === GPS_CHARACTERISTIC_UUID
+      );
+      if (controlCharacteristic) {
+        //await controlCharacteristic.writeWithoutResponse(base64.encode(gps));
+        await controlCharacteristic.writeWithResponse(base64.encode(gps));
+      }
+    } catch (error) {
+      console.log("Error sending control command", error);
+    }
+  };
+
+  const handleXYInput = (x: string, y: string) => {
+    var long = +x;
+    var lat = +y;
+    long = (long * 1000000) | 0;
+    lat = (lat * 1000000) | 0;
+    var index = 0;
+
+
+    var toWrite = String.fromCharCode((index << 1) + ((long & (1 << 28)) >> 28));
+
+    for (var i = 255 << 20, j = 20; i > 15; i >>= 8, j -= 8) {
+      toWrite += String.fromCharCode((long & i) >> j);
+    }
+
+    toWrite += String.fromCharCode(((long & 15) << 4) + ((lat & (15 << 24)) >> 24))
+
+    for (var i = 255 << 16, j = 16; i > 0; i >>= 8, j -= 8) {
+      toWrite += String.fromCharCode((lat & i) >> j);
+    }
+
+    sendGPSCommand(toWrite);
+  }
 
   const handleArrowPress = (direction: string) => {
     switch (direction) {
@@ -160,17 +209,18 @@ function useBLE(): BluetoothLowEnergyApi {
         break;
       case "stop":
         console.log(direction);
+        sendControlCommand("s");
         break;
       default:
         break;
     }
   };
 
-  const handleTimeoutAck = () => {
+  /*const handleTimeoutAck = () => {
     console.log("Acknwoledgement signal sent");
     //& is 38 in ascii being sent to the Pi
     sendControlCommand("@");
-  };
+  };*/
 
   const sendEnableSignal = () => {
     console.log("Turning on the Robot");
@@ -192,9 +242,10 @@ function useBLE(): BluetoothLowEnergyApi {
     connectedDevice,
     disconnectFromDevice,
     handleArrowPress,
-    handleTimeoutAck,
+    //handleTimeoutAck,
     sendEnableSignal,
-    sendDisableSignal
+    sendDisableSignal,
+    handleXYInput,
   };
 }
 
