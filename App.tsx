@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
@@ -25,23 +27,22 @@ const App = () => {
     sendDisableSignal,
     handleXYInput,
   } = useBLE();
-  const [isDeviceModalVisible, setIsDeviceModalVisible] = useState<boolean>(
-    false
-  );
-  const [isEnableRobotModalVisible, setIsEnableRobotModalVisible] = useState<boolean>(
-    false
-  );
+
+  //State hooks for modals, robot toggle, and axis inputs
+  const [isDeviceModalVisible, setIsDeviceModalVisible] = useState<boolean>(false);
+  const [isEnableRobotModalVisible, setIsEnableRobotModalVisible] = useState<boolean>(false);
   const [robotToggle, setRobotToggle] = useState<boolean>(false);
   const [xAxis, setXAxis] = useState("");
   const [yAxis, setYAxis] = useState("");
 
+  //Function to handle GPS input submission into text boxes
   const GPS_Input = () => {
     console.log("X-Axis is: ", xAxis);
     console.log("Y-Axis is: ", yAxis);
-
     handleXYInput(xAxis, yAxis);
   };
 
+  //Function to scan for BLE devices after requesting permissions
   const scanForDevices = async () => {
     const isPermissionsEnabled = await requestPermissions();
     if (isPermissionsEnabled) {
@@ -49,33 +50,43 @@ const App = () => {
     }
   };
 
+  //Function to hide the device connection modal
   const hideDeviceModal = () => {
     setIsDeviceModalVisible(false);
   };
 
+  //Function to hide the enabled robot modal
   const hideEnableRobotModal = () => {
     setIsEnableRobotModalVisible(false);
   };
 
+  //Function to open the enable robot modal
+  const openEnableRobotModal = () => {
+    setIsEnableRobotModalVisible(true);
+  };
+  
+
+  //Function to open the device connection modal and initiate device scan
   const openDeviceModal = async () => {
     scanForDevices();
     setIsDeviceModalVisible(true);
   };
 
-  const openEnableRobotModal = () => {
-    setIsEnableRobotModalVisible(true);
-  };
-
+  //Function to toggle the robot's enable/disable state
+  //Code does this by toggling the robotToggle state (true -> false or false -> true)
   const toggleRobot = () => {
+
     setRobotToggle((prev) => !prev);
-    if(robotToggle) {
+    if(robotToggle) { //If the robot is currently enabled (robotToggle true), send a disable signal
       sendDisableSignal();
     }
-    else {
+    else { //If the robot is currently disabled (robotToggle is false), send an enable signal
       sendEnableSignal();
     }
   };
 
+  //Currently commented out so testing won't spam robot with acks
+  //Function which defines the interval for how frequent an ack should be sent
   /*useEffect(() => {
     const interval = setInterval(() => {
       handleTimeoutAck();
@@ -84,6 +95,9 @@ const App = () => {
     return () => clearInterval(interval); // Cleanup
   }, []);*/
 
+
+  //How react native constructs the actual GUI based on calls to styles
+  //If you want to modify how components are added, focus here
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.TitleWrapper}>
@@ -97,25 +111,25 @@ const App = () => {
           <Text style={styles.TitleText}>Tractor Squad App</Text>
         )}
       </View>
-      <View style={styles.inputContainer}>
+      <View style={styles.inputAxisContainer}>
         <TextInput
-          style={styles.input}
+          style={styles.inputForAxis}
           onChangeText={setXAxis}
           value={xAxis}
           placeholder="X-Axis"
         />
         <TextInput
-          style={styles.input}
+          style={styles.inputForAxis}
           onChangeText={setYAxis}
           value={yAxis}
           placeholder="Y-Axis"
         />
       </View>
-      <TouchableOpacity onPress={GPS_Input} style={styles.gpsButton}>
-        <Text style={styles.gpsButtonText}>Submit</Text>
+      <TouchableOpacity onPress={GPS_Input} style={styles.gpsSubmitButton}>
+        <Text style={styles.gpsSubmitButtonText}>Submit</Text>
       </TouchableOpacity>
       <View style={styles.arrowsContainer}>
-        <View style={styles.row}>
+        <View style={styles.arrowsContainerRow}>
           <TouchableOpacity
             onPressIn={() => handleArrowPress("up")}
             onPressOut={() => handleArrowPress("stop")}
@@ -124,7 +138,7 @@ const App = () => {
             <Text style={styles.arrowText}>↑</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.row}>
+        <View style={styles.arrowsContainerRow}>
           <TouchableOpacity
             onPressIn={() => handleArrowPress("left")}
             onPressOut={() => handleArrowPress("stop")}
@@ -186,18 +200,22 @@ const App = () => {
   );
 };
 
+//Styles for the components
+//AKA GUI stuff. We really just carefully picked positions/values so this could
+//be refactored for someone with more React Native GUI dev
+//Also go here if you need to move around buttons
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f2f2f2",
-    position: "relative", // Set position to relative for positioning children
+    position: "relative", 
 
   },
   TitleWrapper: {
-    position: "absolute", // Position the title absolutely
-    top: 40, // Adjust as needed to move the title up
-    left: 0, // Align title to the left edge
-    right: 0, // Align title to the right edge
+    position: "absolute", 
+    top: 40, 
+    left: 0, 
+    right: 0, 
     justifyContent: "center",
     alignItems: "center",
 
@@ -209,17 +227,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     color: "black",
   },
-  inputContainer: {
-    position: "absolute", // Position the input container absolutely
+  inputAxisContainer: {
+    position: "absolute",
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "flex-start",
     marginHorizontal: 20,
-    bottom: 150, // Adjust as needed to position parallel to arrows container
-    left: 90, // Adjust as needed to position parallel to arrows container
+    bottom: 150, 
+    left: 90,
     width: 275
   },
-  input: {
+  inputForAxis: {
     flex: 1,
     height: 40,
     borderColor: "gray",
@@ -227,14 +245,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 5,
     marginRight: 10,
-    width: 30, // set a specific width
+    width: 30, 
   },
   arrowsContainer: {
     position: "absolute",
     bottom: 40,
-    right: 40 // Adjust as needed
+    right: 40
   },
-  row: {
+  arrowsContainerRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -255,7 +273,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
   },
-  gpsButton: {
+  gpsSubmitButton: {
     backgroundColor: "#3065ba",
     justifyContent: "center",
     alignItems: "center",
@@ -264,73 +282,58 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 8,
     width: 100,
-    alignSelf: "center", // Align the button horizontally
-    position: "absolute", // Position the button absolutely
-    bottom: 20, // Adjust as needed to position it below the input container
-    left: "30%", // Center the button horizontally
-    marginLeft: -50, // Adjust to center the button
+    alignSelf: "center",
+    position: "absolute", 
+    bottom: 20, 
+    left: "30%",
+    marginLeft: -50,
   },
-  gpsButtonText: {
+  gpsSubmitButtonText: {
     fontSize: 18,
     fontWeight: "bold",
     color: "white",
-  },
-  ctaButton: {
-    backgroundColor: "#3065ba",
-    justifyContent: "center",
-    alignItems: "center",
-    height: 60,
-    marginHorizontal: 20,
-    marginBottom: 10,
-    borderRadius: 8,
-    width: 150, // Set width to a specific value
   },
   enableButtonText: {
     fontSize: 18,
     fontWeight: "bold",
     color: "white",
-    marginTop: 28.25, // Adjust the bottom margin to shift text down
-  },
-  ctaButtonText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "white",
+    marginTop: 28.25, 
   },
   enableRobotButton: {
-    backgroundColor: "#B53737", // Red
+    backgroundColor: "#B53737", //Red
     justifyContent: "center",
     alignItems: "center",
     height: 60,
-    top: 100, // Shift the button down by 60 units
+    top: 100, 
     marginBottom: 10,
     borderRadius: 8,
-    width: 125, // Set width to a specific value
-    position: "absolute", // Position the button absolutely
-    left: -62.5, // Shift the button half of its width to the left
-    transform: [{ rotate: "-90deg" }], // Rotate the button text
+    width: 125,
+    position: "absolute", 
+    left: -62.5,
+    transform: [{ rotate: "-90deg" }],
   },
   disableRobotButton: {
-    backgroundColor: "#0F9D58", //green
+    backgroundColor: "#0F9D58", //Green
   justifyContent: "center",
     alignItems: "center",
     height: 60,
     marginBottom: 10,
     borderRadius: 8,
-    width: 125, // Set width to a specific value
-    position: "absolute", // Position the button absolutely
+    width: 125, 
+    position: "absolute",
   },
   connectButton: {
     backgroundColor: "#3065ba",
     justifyContent: "center",
     alignItems: "center",
     height: 60,
-    top: 250, // Shift the button down by 60 units
+    top: 250,
     marginBottom: 10,
     borderRadius: 8,
-    width: 125, // Set width to a specific value
-    position: "absolute", // Position the button absolutely
-    left: -62.5, // Shift the button half of its width to the left
-    transform: [{ rotate: "-90deg" }], // Rotate the button text
+    width: 125,
+    position: "absolute",
+    left: -62.5,
+    transform: [{ rotate: "-90deg" }],
   },
   disableButtonText: {
     fontSize: 18,

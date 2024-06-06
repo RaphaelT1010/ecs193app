@@ -4,11 +4,13 @@ import { BleManager, Device } from "react-native-ble-plx";
 import * as ExpoDevice from "expo-device";
 import base64 from "react-native-base64";
 
+//UUIDs for specific services and characteristics to the robot
 const CONTROL_SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
 const CONTROL_CHARACTERISTIC_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
 const GPS_SERVICE_UUID = "0392fac1-9fd3-1023-a4e2-39109fa39aa2";
 const GPS_CHARACTERISTIC_UUID = "0102aaaa-3333-1111-abcd-0123456831fd";
 
+//Interface defining the API calls we're using for this app
 interface BluetoothLowEnergyApi {
   requestPermissions(): Promise<boolean>;
   scanForPeripherals(): void;
@@ -23,11 +25,13 @@ interface BluetoothLowEnergyApi {
   handleXYInput: (x: string, y: string) => void;
 }
 
+//Custom hook to manage BLE operations
 function useBLE(): BluetoothLowEnergyApi {
   const bleManager = useMemo(() => new BleManager(), []);
   const [allDevices, setAllDevices] = useState<Device[]>([]);
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
-
+  
+  //Function to request permissions for Android 31+
   const requestAndroid31Permissions = async () => {
     const bluetoothScanPermission = await PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
@@ -61,6 +65,7 @@ function useBLE(): BluetoothLowEnergyApi {
     );
   };
 
+  //Function to request necessary permissions based on the platform and Android version
   const requestPermissions = async () => {
     if (Platform.OS === "android") {
       if ((ExpoDevice.platformApiLevel ?? -1) < 31) {
@@ -84,9 +89,11 @@ function useBLE(): BluetoothLowEnergyApi {
     }
   };
 
+  //Function to check for duplicate devices
   const isDuplicateDevice = (devices: Device[], nextDevice: Device) =>
     devices.findIndex((device) => nextDevice.id === device.id) > -1;
 
+  //Function to start scanning for peripherals
   const scanForPeripherals = () =>
     bleManager.startDeviceScan(null, null, (error, device) => {
       if (error) {
@@ -102,6 +109,7 @@ function useBLE(): BluetoothLowEnergyApi {
       }
     });
 
+  //Function to connect to a device
   const connectToDevice = async (device: Device) => {
     try {
       await bleManager.connectToDevice(device.id);
@@ -114,6 +122,7 @@ function useBLE(): BluetoothLowEnergyApi {
     }
   };
 
+  //Function to disconnect from a device
   const disconnectFromDevice = () => {
     if (connectedDevice) {
       bleManager.cancelDeviceConnection(connectedDevice.id);
@@ -122,6 +131,16 @@ function useBLE(): BluetoothLowEnergyApi {
     }
   };
 
+  //*********************************************************************** */
+  //We don't recommend you change characterstics/UUIDS unless
+  //you know what you're doing. sendGPSCommand and sendControlCommand
+  //probably shouldn't be changed, but instead just added onto to unless
+  //if you're doing a major overhaul of the app/characteristic UUID interpretation
+  //*********************************************************************** */
+
+
+  //Function to send a control command to the connected device
+  //This is a movement command
   const sendControlCommand = async (command: string) => {
     if (!connectedDevice) {
       console.log("No device connected");
@@ -144,6 +163,8 @@ function useBLE(): BluetoothLowEnergyApi {
     }
   };
 
+  // Function to send a GPS command to the connected device
+  //This is a GPS coordinate 
   const sendGPSCommand = async (gps: string) => {
     if (!connectedDevice) {
       console.log("No device connected");
@@ -188,7 +209,14 @@ function useBLE(): BluetoothLowEnergyApi {
 
     sendGPSCommand(toWrite);
   }
-
+  
+  //Function to handle arrow press input and send corresponding control command
+  //Left = "l"
+  //Up = "u"
+  //Right = "r"
+  //Down = "d"
+  //Stop = "s"
+  //A stop signal should send after a button is let go. For redundancy and safety
   const handleArrowPress = (direction: string) => {
     switch (direction) {
       case "left":
@@ -216,18 +244,25 @@ function useBLE(): BluetoothLowEnergyApi {
     }
   };
 
+  //Currently commented out so PI won't be flooded with acks
+  //Sends a perioduc signal to the PI
+  //Ack = "@"
   /*const handleTimeoutAck = () => {
     console.log("Acknwoledgement signal sent");
     //& is 38 in ascii being sent to the Pi
     sendControlCommand("@");
   };*/
 
+  //Function to send an enable signal to the device
+  //Enable = "&"
   const sendEnableSignal = () => {
     console.log("Turning on the Robot");
     //& is 38 in ascii being sent to the Pi
     sendControlCommand("&");
   };
 
+  //Function to send a disable signal to the device
+  //Disable = "#"
   const sendDisableSignal = () => {
     console.log("Turning off the Robot");
     //& is 38 in ascii being sent to the Pi
