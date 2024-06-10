@@ -76,8 +76,8 @@ to install the app. Once it finishes, it will make an app called RoboticDummyApp
 Since the apk removes the "local.properties" file and clears the JDK path in "gradle.properties", these will need to be redone as explained before. Please follow steps 5 through 9 in the
 "Setting up the Android File and Gradle" section. Once this is done again, you can properly run "npx expo run:android" if using the emulator or USB debugging again. Do note, that you will need to
 redo the apk building section if you wish to build another apk. Unfortunately, this is how you will have to develop between the dev debugging and the apk building because expo is not too nice about simplicity.
-There probably is a better way to go about this, but from what we have found, the only easy way is using a local npx build on a Mac or Linux machine. Since we only had Windows machines, we could not do those
-local builds.
+There probably is a better way to go about this, but from what we have found, the only other way is using a local npx build on a Mac or Linux machine. Since we only had Windows machines, we could not do those
+local builds. Therefore, we had to choose the expo dev option in order to build our APK files.
 
 # Issues/Errors
 There can be a lot of issues and dependencies. To make sure you have the correct dependency versions, I would suggest looking at package.json for the version types. Ideally, running all of the terminal commands
